@@ -64,6 +64,7 @@ class SSP<Type extends SSPType = "nv10usb"> extends EventEmitter {
   public async disable() {
     if (this.pollTimeout) {
       clearTimeout(this.pollTimeout);
+      this.pollTimeout = null;
     }
     if (!this.commands) {
       throw new Error("Commands are not initialised");
@@ -74,6 +75,7 @@ class SSP<Type extends SSPType = "nv10usb"> extends EventEmitter {
   public async reset() {
     if (this.pollTimeout) {
       clearTimeout(this.pollTimeout);
+      this.pollTimeout = null;
     }
     if (!this.commands) {
       throw new Error("Commands are not initialised");
@@ -105,9 +107,13 @@ class SSP<Type extends SSPType = "nv10usb"> extends EventEmitter {
     const parser = this.socket.pipe(new SSPParser());
     this.socket.on("close", () => {
       this.emit("close");
+      setTimeout(() => {
+        this.socket.open();
+      }, 2000);
     });
     this.socket.on("error", (err: Error) => {
       this.emit("error", err);
+      this.socket.close();
     });
     parser.on("data", this.handleData);
     const openAsync = (socket: Serialport) =>
